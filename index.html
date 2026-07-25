@@ -52,11 +52,12 @@
   .header-actions { margin-left: auto; display: flex; gap: 8px; }
   .icon-btn {
     background: var(--panel); border: 1px solid var(--border); color: var(--muted);
-    border-radius: 999px; padding: 8px 12px; font-size: 13px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+    border-radius: 50%; width: 36px; height: 36px; padding: 0; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex: 0 0 auto;
   }
   .icon-btn:active { background: var(--panel-2); }
-  .icon-btn svg { width: 15px; height: 15px; }
+  .icon-btn svg { width: 17px; height: 17px; }
 
   .card {
     background: var(--panel);
@@ -278,12 +279,19 @@
       <div class="sub" id="headerSub">Первая запись — начало журнала.</div>
     </div>
     <div class="header-actions">
-      <button class="icon-btn" id="chartScrollBtn">
+      <button class="icon-btn" id="chartScrollBtn" title="График" aria-label="График">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
-        График
+      </button>
+      <button class="icon-btn" id="repeatBtn" title="Повторить прошлую" aria-label="Повторить прошлую">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      </button>
+      <button class="icon-btn" id="exportBtn" title="Экспорт JSON" aria-label="Экспорт JSON">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
       </button>
     </div>
   </div>
+
+  <button class="btn btn-primary" id="saveSessionBtn" style="margin-bottom:16px">Сохранить тренировку</button>
 
   <!-- Дата -->
   <div class="card">
@@ -315,7 +323,7 @@
       </div>
       <div>
         <label for="setsInput">Подходы</label>
-        <input type="number" id="setsInput" inputmode="numeric" min="1" placeholder="3">
+        <input type="number" id="setsInput" inputmode="numeric" min="1" placeholder="—">
       </div>
     </div>
     <div class="quick-weight-row">
@@ -329,28 +337,6 @@
     <button class="btn btn-primary" id="addSetBtn">Записать</button>
   </div>
 
-  <!-- Действия -->
-  <details class="card" id="actionsCard">
-    <summary>Действия <span class="chev">›</span></summary>
-    <div class="card-body">
-      <div class="save-copy-row">
-        <button class="btn btn-primary" id="saveSessionBtn">Сохранить тренировку</button>
-        <button class="chip" id="copyDraftBtn">⧉ Копировать</button>
-      </div>
-      <div class="btn-row" style="gap:8px">
-        <button class="chip" id="repeatBtn">↻ Повторить прошлую</button>
-        <button class="chip" id="exportBtn">⤓ Экспорт JSON</button>
-        <button class="chip" id="importBtn">⤒ Импорт JSON</button>
-        <input type="file" id="importFile" accept="application/json" style="display:none">
-      </div>
-      <div class="hint">Экспорт/импорт JSON — резервная копия журнала или перенос данных на другое устройство: экспорт сохраняет файл с историей, импорт добавляет записи из такого файла в текущий журнал.</div>
-      <div class="danger-zone">
-        <div class="zone-label">Опасная зона</div>
-        <button class="chip danger" id="clearBtn" style="width:100%">✕ Очистить все данные без возможности восстановления</button>
-      </div>
-    </div>
-  </details>
-
   <!-- Текущая тренировка (черновик, редактируемый) -->
   <details class="card" id="draftCard" open>
     <summary>Текущая тренировка <span id="draftCount" class="pill"></span> <span class="chev">›</span></summary>
@@ -362,6 +348,9 @@
         <button class="danger" id="deleteSessionBtn">Удалить</button>
       </div>
       <div id="draftArea"></div>
+      <div class="danger-zone">
+        <button class="chip danger" id="clearDraftBtn" style="width:100%">✕ Удалить текущую тренировку</button>
+      </div>
     </div>
   </details>
 
@@ -407,6 +396,14 @@
     <div id="chartArea" style="margin-top:12px"></div>
   </div>
 
+  <!-- Список упражнений -->
+  <details class="card" id="exercisesCard">
+    <summary>Список упражнений <span id="exercisesCount" class="pill"></span> <span class="chev">›</span></summary>
+    <div class="card-body">
+      <div id="exercisesArea"></div>
+    </div>
+  </details>
+
   <!-- Личные рекорды -->
   <details class="card" id="recordsCard">
     <summary>Личные рекорды <span class="chev">›</span></summary>
@@ -420,6 +417,24 @@
     <summary>Последние тренировки <span class="chev">›</span></summary>
     <div class="card-body">
       <div id="historyArea"></div>
+    </div>
+  </details>
+
+  <!-- Другое -->
+  <details class="card" id="otherCard">
+    <summary>Другое <span class="chev">›</span></summary>
+    <div class="card-body">
+      <div class="btn-row" style="gap:8px">
+        <button class="chip" id="copyDraftBtn">⧉ Копировать</button>
+        <button class="chip" id="importBtn">⤒ Импорт JSON</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
+      </div>
+      <div class="hint">Импорт JSON добавляет записи из ранее экспортированного файла в текущий журнал, не создавая дублей. Кнопка экспорта — вверху, рядом с «График».</div>
+      <div class="danger-zone">
+        <div class="zone-label">Опасная зона</div>
+        <button class="chip danger" id="clearBtn" style="width:100%">✕ Очистить все данные без возможности восстановления</button>
+        <div class="hint">Полностью удалит журнал тренировок, список упражнений и рекорды из этого браузера. Действие необратимо.</div>
+      </div>
     </div>
   </details>
 </div>
@@ -582,7 +597,91 @@ function registerExercise(name) {
     state.exercises.push(name);
     state.exercises.sort((a, b) => a.localeCompare(b, "ru"));
     rebuildDatalist();
+    renderExercisesList();
   }
+}
+
+/* ---------- список упражнений (редактирование/удаление из справочника) ---------- */
+function renderExercisesList() {
+  const area = document.getElementById("exercisesArea");
+  const count = document.getElementById("exercisesCount");
+  if (!area) return;
+  count.textContent = state.exercises.length ? String(state.exercises.length) : "";
+
+  if (!state.exercises.length) {
+    area.innerHTML = '<div class="empty"><div class="big">Пока пусто</div><div class="small">Упражнения появятся здесь после первой записи</div></div>';
+    return;
+  }
+
+  area.innerHTML = state.exercises.map(name => `
+    <div class="entry">
+      <div class="entry-head">
+        <input class="ex" type="text" value="${escapeHtml(name)}" data-old="${escapeHtml(name)}">
+        <button class="entry-x" data-del-ex="${escapeHtml(name)}" title="Удалить">×</button>
+      </div>
+    </div>`).join("");
+
+  area.querySelectorAll("input.ex").forEach(inp => {
+    const apply = () => {
+      const oldName = inp.dataset.old;
+      const newName = inp.value.trim();
+      if (!newName) { inp.value = oldName; return; }
+      if (newName === oldName) return;
+      renameExercise(oldName, newName);
+    };
+    inp.addEventListener("change", apply);
+    inp.addEventListener("blur", apply);
+  });
+  area.querySelectorAll("[data-del-ex]").forEach(b => {
+    b.onclick = () => {
+      const name = b.dataset.delEx;
+      showConfirm(`Удалить «${name}» из списка упражнений? Уже сохранённые записи это не затронет.`, () => {
+        deleteExerciseFromList(name);
+      }, "Удалить");
+    };
+  });
+}
+function renameExercise(oldName, newName) {
+  const clash = state.exercises.some(e => e.toLowerCase() === newName.toLowerCase() && e.toLowerCase() !== oldName.toLowerCase());
+  if (clash) { toast("Такое упражнение уже есть в списке"); renderExercisesList(); return; }
+
+  state.exercises = state.exercises
+    .map(e => (e.toLowerCase() === oldName.toLowerCase() ? newName : e))
+    .sort((a, b) => a.localeCompare(b, "ru"));
+
+  Object.keys(state.sessions).forEach(date => {
+    state.sessions[date].forEach(s => {
+      if (s.exercise.toLowerCase() === oldName.toLowerCase()) s.exercise = newName;
+    });
+  });
+  state.draft.forEach(s => {
+    if (s.exercise.toLowerCase() === oldName.toLowerCase()) s.exercise = newName;
+  });
+
+  saveStore();
+  saveDraftAutosave();
+  rebuildDatalist(); renderExercisesList(); renderDraft(); renderHistory();
+  refreshChartExerciseOptions(); drawChart(); renderRecords(); updateHeaderSub();
+  toast("Упражнение переименовано");
+}
+function deleteExerciseFromList(name) {
+  state.exercises = state.exercises.filter(e => e.toLowerCase() !== name.toLowerCase());
+  saveStore();
+  rebuildDatalist();
+  renderExercisesList();
+  toast("Упражнение удалено из списка");
+}
+
+/* ---------- удаление текущего черновика (незасохранённых записей) ---------- */
+function clearDraft() {
+  if (!state.draft.length) { toast("Черновик уже пуст"); return; }
+  showConfirm("Удалить все записи текущей тренировки? Несохранённые данные будут потеряны.", () => {
+    state.draft = [];
+    state.editingDate = null;
+    renderDraft(); renderHistory(); refreshRepeatSelect();
+    saveDraftAutosave();
+    toast("Текущая тренировка удалена");
+  }, "Удалить");
 }
 
 /* ---------- подсказка ---------- */
@@ -905,7 +1004,7 @@ function importJSON(file) {
         });
         state.sessions[date] = merged;
       });
-      saveStore(); rebuildDatalist(); renderHistory(); refreshRepeatSelect();
+      saveStore(); rebuildDatalist(); renderExercisesList(); renderHistory(); refreshRepeatSelect();
       refreshChartExerciseOptions(); drawChart(); renderCalendar(); renderRecords(); updateHeaderSub();
       toast(`Импортировано сессий: ${Object.keys(incS).length}`);
     } catch (err) { toast("Ошибка импорта: некорректный JSON"); }
@@ -917,7 +1016,7 @@ function clearAll() {
     localStorage.removeItem(STORAGE_KEY);
     clearDraftAutosave();
     Object.assign(state, { exercises: [], sessions: {}, draft: [], editingDate: null });
-    rebuildDatalist(); renderDraft(); renderHistory(); refreshRepeatSelect();
+    rebuildDatalist(); renderExercisesList(); renderDraft(); renderHistory(); refreshRepeatSelect();
     refreshChartExerciseOptions(); drawChart(); renderCalendar(); renderRecords(); updateHeaderSub();
     toast("Все данные очищены");
   }, "Очистить всё");
@@ -1134,6 +1233,7 @@ function init() {
   document.getElementById("copyDraftBtn").onclick = copyDraft;
   document.getElementById("cancelEditBtn").onclick = cancelEdit;
   document.getElementById("deleteSessionBtn").onclick = deleteSession;
+  document.getElementById("clearDraftBtn").onclick = clearDraft;
   document.getElementById("repeatBtn").onclick = () => {
     refreshRepeatSelect();
     const card = document.getElementById("repeatCard");
@@ -1175,7 +1275,7 @@ function init() {
   document.getElementById("chartExercise").onchange = drawChart;
   document.getElementById("chartMetric").onchange = drawChart;
 
-  rebuildDatalist(); renderDraft(); renderHistory(); refreshRepeatSelect();
+  rebuildDatalist(); renderExercisesList(); renderDraft(); renderHistory(); refreshRepeatSelect();
   refreshChartExerciseOptions(); drawChart(); renderCalendar(); renderRecords(); updateHeaderSub();
   if (autosaved && autosaved.draft && autosaved.draft.length) {
     toast("Восстановлен несохранённый черновик тренировки");
