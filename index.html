@@ -327,6 +327,51 @@
   .modal-actions button { flex: 1; padding: 11px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; }
   .modal-actions .modal-cancel { background: var(--glass-2); color: var(--text); border: 1px solid var(--glass-border); }
   .modal-actions .modal-ok { background: var(--danger); color: #fff; }
+
+  /* ---------- v2: подходы внутри одного упражнения ---------- */
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .set-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .set-row { display: grid; grid-template-columns: 58px 1fr 1fr 28px; gap: 6px; align-items: center; }
+  .set-row .set-label { font-size: 12px; color: var(--muted); }
+  .set-row input { padding: 9px 10px; font-size: 14px; }
+  .set-x { background: transparent; border: none; color: var(--muted); font-size: 18px; padding: 2px 6px; line-height: 1; }
+  .set-x:active { color: var(--danger); }
+  .entry-tonnage { font-size: 12px; color: var(--muted); margin: 2px 0 10px; }
+  .entry-tonnage strong { color: var(--accent-hi); font-weight: 700; }
+  .add-set-row-btn {
+    background: transparent; border: 1px dashed var(--glass-border-soft); color: var(--muted);
+    border-radius: var(--radius-sm); padding: 7px; font-size: 12.5px; width: 100%; margin-bottom: 10px;
+  }
+  .add-set-row-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------- v2: кардио ---------- */
+  .cardio-entry { background: var(--glass-3); border: 1px solid var(--glass-border-soft); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px; }
+  .cardio-entry-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .cardio-entry-head select { flex: 1 1 auto; }
+  .cardio-row-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .cardio-note-row { display: flex; gap: 8px; align-items: center; }
+  .cardio-note-row input { flex: 1 1 auto; }
+  .hist-cardio-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin: 10px 0 4px; }
+  .hist-line.cardio .tag { color: var(--accent-hi); }
+
+  /* ---------- v2: рекорды по категориям ---------- */
+  .records-group { margin-bottom: 16px; }
+  .records-group:last-child { margin-bottom: 0; }
+  .records-group-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 8px; }
+  .workout-record-banner { background: var(--accent-soft); border: 1px solid rgba(199,91,34,0.4); border-radius: var(--radius-sm); padding: 14px; text-align: center; margin-bottom: 16px; }
+  .workout-record-banner .big { font-size: 21px; font-weight: 800; color: var(--accent-hi); }
+  .workout-record-banner .small { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+
+  /* ---------- v2: статистика кардио ---------- */
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat-item { background: var(--glass-3); border: 1px solid var(--glass-border-soft); border-radius: var(--radius-sm); padding: 12px 6px; text-align: center; }
+  .stat-item .val { font-size: 17px; font-weight: 800; color: var(--accent-hi); }
+  .stat-item .lbl { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+
+  @media (max-width: 380px) {
+    .set-row { grid-template-columns: 50px 1fr 1fr 24px; }
+    .cardio-row-fields { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -398,6 +443,30 @@
     <button class="btn btn-primary" id="addSetBtn">Записать</button>
   </div>
 
+  <!-- Кардио -->
+  <div class="card">
+    <h2>Кардио</h2>
+    <div class="field">
+      <label for="cardioType">Тип</label>
+      <select id="cardioType"></select>
+    </div>
+    <div class="row2">
+      <div>
+        <label for="cardioDuration">Время, мин</label>
+        <input type="number" id="cardioDuration" inputmode="numeric" min="0" placeholder="—">
+      </div>
+      <div>
+        <label for="cardioDistance">Дистанция, км</label>
+        <input type="text" id="cardioDistance" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" placeholder="—">
+      </div>
+    </div>
+    <div class="field">
+      <label for="cardioNote">Заметка</label>
+      <input type="text" id="cardioNote" placeholder="Необязательно">
+    </div>
+    <button class="btn btn-primary" id="addCardioBtn">Добавить кардио</button>
+  </div>
+
   <!-- Текущая тренировка (черновик, редактируемый) -->
   <details class="card" id="draftCard" open>
     <summary>Текущая тренировка <span id="draftCount" class="pill"></span> <span class="chev">›</span></summary>
@@ -409,6 +478,7 @@
         <button class="danger" id="deleteSessionBtn">Удалить</button>
       </div>
       <div id="draftArea"></div>
+      <div id="draftCardioArea"></div>
       <div class="danger-zone">
         <button class="chip danger" id="clearDraftBtn" style="width:100%">✕ Удалить текущую тренировку</button>
       </div>
@@ -446,12 +516,7 @@
       </div>
       <div class="field" style="margin-bottom:0">
         <label for="chartMetric">Показатель</label>
-        <select id="chartMetric">
-          <option value="weight">Вес (кг)</option>
-          <option value="volume">Объём (вес×повт×под)</option>
-          <option value="reps">Повторы</option>
-          <option value="sets">Подходы</option>
-        </select>
+        <select id="chartMetric"></select>
       </div>
     </div>
     <div id="chartArea" style="margin-top:12px"></div>
@@ -470,6 +535,14 @@
     <summary>Личные рекорды <span class="chev">›</span></summary>
     <div class="card-body">
       <div id="recordsArea"></div>
+    </div>
+  </details>
+
+  <!-- Статистика кардио -->
+  <details class="card" id="cardioStatsCard">
+    <summary>Статистика кардио <span class="chev">›</span></summary>
+    <div class="card-body">
+      <div id="cardioStatsArea"></div>
     </div>
   </details>
 
@@ -512,837 +585,23 @@
   </div>
 </div>
 
-<script>
-/* =========================================================
-   Схема данных (localStorage, ключ "workoutLog")
-   { version, exercises:[], sessions: { "ГГГГ-ММ-ДД": [{exercise,weight,reps,sets}, ...] } }
-   ========================================================= */
-const STORAGE_KEY = "workoutLog";
-
-const state = {
-  exercises: [],
-  sessions: {},
-  draft: [],
-  currentDate: "",
-  editingDate: null
-};
-
-/* ---------- сохранение ---------- */
-function loadStore() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { version: 1, exercises: [], sessions: {} };
-    const data = JSON.parse(raw);
-    data.version = data.version || 1;
-    data.exercises = data.exercises || [];
-    data.sessions = data.sessions || {};
-    return data;
-  } catch (e) {
-    return { version: 1, exercises: [], sessions: {} };
-  }
-}
-function saveStore() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({
-    version: 1, exercises: state.exercises, sessions: state.sessions
-  }));
-}
-
-/* ---------- автосохранение черновика (на случай случайного закрытия) ---------- */
-const DRAFT_KEY = "workoutLogDraft";
-function saveDraftAutosave() {
-  try {
-    if (!state.draft.length) { localStorage.removeItem(DRAFT_KEY); return; }
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({
-      draft: state.draft, currentDate: state.currentDate, editingDate: state.editingDate
-    }));
-  } catch (e) {}
-}
-function clearDraftAutosave() {
-  try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
-}
-function loadDraftAutosave() {
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) { return null; }
-}
-
-/* ---------- вспомогательные ---------- */
-function todayISO() {
-  const d = new Date();
-  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 10);
-}
-function fmtDate(iso) {
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-}
-function shortDate(iso) {
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
-}
-function uniq(arr) { return Array.from(new Set(arr)); }
-function toNum(v) {
-  if (v == null) return NaN;
-  if (typeof v === "number") return v;
-  return parseFloat(String(v).trim().replace(",", "."));
-}
-function normalizeSessions(sessions) {
-  Object.keys(sessions).forEach(date => {
-    sessions[date] = (sessions[date] || []).map(s => {
-      const w = toNum(s.weight);
-      return { ...s, weight: isNaN(w) ? 0 : w };
-    });
-  });
-  return sessions;
-}
-function formatNum(v) { return Number.isInteger(v) ? String(v) : (Math.round(v * 10) / 10).toString(); }
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
-}
-function toast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.remove("show"), 1700);
-}
-
-/* ---------- кастомное подтверждение (нативный confirm() блокируется в некоторых webview) ---------- */
-function showConfirm(message, onConfirm, okLabel) {
-  const overlay = document.getElementById("confirmOverlay");
-  const msgEl = document.getElementById("confirmMsg");
-  const okBtn = document.getElementById("confirmOkBtn");
-  const cancelBtn = document.getElementById("confirmCancelBtn");
-  msgEl.textContent = message;
-  okBtn.textContent = okLabel || "Удалить";
-  overlay.classList.add("show");
-
-  const close = () => overlay.classList.remove("show");
-  const onOk = () => { close(); cleanup(); onConfirm(); };
-  const onCancel = () => { close(); cleanup(); };
-  function cleanup() {
-    okBtn.removeEventListener("click", onOk);
-    cancelBtn.removeEventListener("click", onCancel);
-  }
-  okBtn.addEventListener("click", onOk);
-  cancelBtn.addEventListener("click", onCancel);
-}
-
-function lastUsedForExercise(exercise, beforeDate) {
-  const dates = Object.keys(state.sessions).filter(d => d < beforeDate).sort();
-  for (let i = dates.length - 1; i >= 0; i--) {
-    const sets = state.sessions[dates[i]].filter(s => s.exercise.toLowerCase() === exercise.toLowerCase());
-    if (sets.length) {
-      const last = sets[sets.length - 1];
-      return { date: dates[i], weight: last.weight, reps: last.reps, sets: last.sets };
-    }
-  }
-  return null;
-}
-
-/* ---------- datalist ---------- */
-function rebuildDatalist() {
-  const dl = document.getElementById("exerciseList");
-  dl.innerHTML = "";
-  state.exercises.forEach(name => {
-    const o = document.createElement("option");
-    o.value = name;
-    dl.appendChild(o);
-  });
-}
-function registerExercise(name) {
-  name = (name || "").trim();
-  if (!name) return;
-  if (!state.exercises.some(e => e.toLowerCase() === name.toLowerCase())) {
-    state.exercises.push(name);
-    state.exercises.sort((a, b) => a.localeCompare(b, "ru"));
-    rebuildDatalist();
-    renderExercisesList();
-  }
-}
-
-/* ---------- список упражнений (редактирование/удаление из справочника) ---------- */
-function renderExercisesList() {
-  const area = document.getElementById("exercisesArea");
-  const count = document.getElementById("exercisesCount");
-  if (!area) return;
-  count.textContent = state.exercises.length ? String(state.exercises.length) : "";
-
-  if (!state.exercises.length) {
-    area.innerHTML = '<div class="empty"><div class="big">Пока пусто</div><div class="small">Упражнения появятся здесь после первой записи</div></div>';
-    return;
-  }
-
-  area.innerHTML = state.exercises.map(name => `
-    <div class="entry">
-      <div class="entry-head">
-        <input class="ex" type="text" value="${escapeHtml(name)}" data-old="${escapeHtml(name)}">
-        <button class="entry-x" data-del-ex="${escapeHtml(name)}" title="Удалить">×</button>
-      </div>
-    </div>`).join("");
-
-  area.querySelectorAll("input.ex").forEach(inp => {
-    const apply = () => {
-      const oldName = inp.dataset.old;
-      const newName = inp.value.trim();
-      if (!newName) { inp.value = oldName; return; }
-      if (newName === oldName) return;
-      renameExercise(oldName, newName);
-    };
-    inp.addEventListener("change", apply);
-    inp.addEventListener("blur", apply);
-  });
-  area.querySelectorAll("[data-del-ex]").forEach(b => {
-    b.onclick = () => {
-      const name = b.dataset.delEx;
-      showConfirm(`Удалить «${name}» из списка упражнений? Уже сохранённые записи это не затронет.`, () => {
-        deleteExerciseFromList(name);
-      }, "Удалить");
-    };
-  });
-}
-function renameExercise(oldName, newName) {
-  const clash = state.exercises.some(e => e.toLowerCase() === newName.toLowerCase() && e.toLowerCase() !== oldName.toLowerCase());
-  if (clash) { toast("Такое упражнение уже есть в списке"); renderExercisesList(); return; }
-
-  state.exercises = state.exercises
-    .map(e => (e.toLowerCase() === oldName.toLowerCase() ? newName : e))
-    .sort((a, b) => a.localeCompare(b, "ru"));
-
-  Object.keys(state.sessions).forEach(date => {
-    state.sessions[date].forEach(s => {
-      if (s.exercise.toLowerCase() === oldName.toLowerCase()) s.exercise = newName;
-    });
-  });
-  state.draft.forEach(s => {
-    if (s.exercise.toLowerCase() === oldName.toLowerCase()) s.exercise = newName;
-  });
-
-  saveStore();
-  saveDraftAutosave();
-  rebuildDatalist(); renderExercisesList(); renderDraft(); renderHistory();
-  refreshChartExerciseOptions(); drawChart(); renderRecords(); updateHeaderSub();
-  toast("Упражнение переименовано");
-}
-function deleteExerciseFromList(name) {
-  state.exercises = state.exercises.filter(e => e.toLowerCase() !== name.toLowerCase());
-  saveStore();
-  rebuildDatalist();
-  renderExercisesList();
-  toast("Упражнение удалено из списка");
-}
-
-/* ---------- удаление текущего черновика (незасохранённых записей) ---------- */
-function clearDraft() {
-  if (!state.draft.length) { toast("Черновик уже пуст"); return; }
-  showConfirm("Удалить все записи текущей тренировки? Несохранённые данные будут потеряны.", () => {
-    state.draft = [];
-    state.editingDate = null;
-    renderDraft(); renderHistory(); refreshRepeatSelect();
-    saveDraftAutosave();
-    toast("Текущая тренировка удалена");
-  }, "Удалить");
-}
-
-/* ---------- подсказка ---------- */
-function updateSuggestion() {
-  const ex = document.getElementById("exerciseInput").value.trim();
-  const hint = document.getElementById("suggestHint");
-  if (!ex || !state.currentDate) { hint.textContent = ""; hint.classList.remove("clickable"); hint.onclick = null; return; }
-  const last = lastUsedForExercise(ex, state.currentDate);
-  if (last) {
-    hint.innerHTML = `В прошлый раз: <span class="pill">${formatNum(last.weight)} кг × ${last.reps} повт × ${last.sets} под</span> — ${fmtDate(last.date)}. Нажмите, чтобы подставить.`;
-    hint.classList.add("clickable");
-    hint.onclick = () => {
-      document.getElementById("weightInput").value = last.weight;
-      document.getElementById("repsInput").value = last.reps;
-      document.getElementById("setsInput").value = last.sets;
-      document.getElementById("weightInput").focus();
-    };
-  } else {
-    hint.textContent = "Для этого упражнения записей ещё нет.";
-    hint.classList.remove("clickable");
-    hint.onclick = null;
-  }
-}
-
-/* ---------- черновик: редактируемые записи ---------- */
-function renderDraft() {
-  const area = document.getElementById("draftArea");
-  const count = document.getElementById("draftCount");
-  count.textContent = state.draft.length ? `${state.draft.length} зап.` : "";
-
-  const banner = document.getElementById("editBanner");
-  if (state.editingDate) {
-    document.getElementById("editDate").textContent = fmtDate(state.editingDate);
-    banner.classList.add("active");
-  } else {
-    banner.classList.remove("active");
-  }
-
-  if (!state.draft.length) {
-    area.innerHTML = '<div class="empty"><div class="big">Пока пусто</div><div class="small">Добавьте первое упражнение выше</div></div>';
-    return;
-  }
-
-  area.innerHTML = state.draft.map((s, i) => `
-    <div class="entry" data-i="${i}">
-      <div class="entry-head">
-        <span class="entry-idx">${i + 1}</span>
-        <input class="ex" type="text" list="exerciseList" value="${escapeHtml(s.exercise)}" data-field="exercise" placeholder="Упражнение">
-        <button class="entry-x" data-del="${i}" title="Убрать">×</button>
-      </div>
-      <div class="row3">
-        <div><label>Вес, кг</label><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" value="${s.weight}" data-field="weight"></div>
-        <div><label>Повторы</label><input type="number" inputmode="numeric" min="0" value="${s.reps}" data-field="reps"></div>
-        <div><label>Подходы</label><input type="number" inputmode="numeric" min="1" value="${s.sets}" data-field="sets"></div>
-      </div>
-    </div>`).join("");
-
-  // привязка инлайн-редактирования
-  area.querySelectorAll(".entry").forEach(entry => {
-    const i = parseInt(entry.dataset.i, 10);
-    entry.querySelectorAll("[data-field]").forEach(inp => {
-      const field = inp.dataset.field;
-      const apply = () => {
-        let v = inp.value;
-        if (field === "weight") {
-          v = toNum(v); if (isNaN(v) || v < 0) v = 0;
-        } else if (field === "reps" || field === "sets") {
-          v = parseInt(v, 10); if (isNaN(v)) v = (field === "sets" ? 1 : 0);
-          if (field === "sets" && v < 1) v = 1;
-        } else {
-          v = String(v).trim();
-          if (field === "exercise") registerExercise(v);
-        }
-        state.draft[i][field] = v;
-        if (field !== "exercise") inp.value = v;
-        saveDraftAutosave();
-      };
-      inp.addEventListener("change", apply);
-      inp.addEventListener("blur", apply);
-    });
-  });
-  area.querySelectorAll("[data-del]").forEach(b => {
-    b.onclick = () => {
-      state.draft.splice(parseInt(b.dataset.del, 10), 1);
-      renderDraft();
-      saveDraftAutosave();
-    };
-  });
-}
-
-/* ---------- история ---------- */
-function renderHistory() {
-  const area = document.getElementById("historyArea");
-  const dates = Object.keys(state.sessions)
-    .filter(d => state.sessions[d] && state.sessions[d].length).sort().reverse();
-
-  if (!dates.length) {
-    area.innerHTML = '<div class="empty"><div class="big">Пока пусто</div><div class="small">Сохранённых тренировок ещё нет</div></div>';
-    return;
-  }
-  area.innerHTML = dates.map(d => {
-    const sets = state.sessions[d];
-    const byEx = {};
-    sets.forEach(s => { (byEx[s.exercise] = byEx[s.exercise] || []).push(s); });
-    const exList = Object.keys(byEx).map(ex =>
-      `<div class="hist-line"><strong>${escapeHtml(ex)}</strong> <span class="tag">—</span> ${byEx[ex].map(s => `${formatNum(s.weight)}кг×${s.reps}×${s.sets}под`).join(", ")}</div>`
-    ).join("");
-    const isToday = d === state.currentDate;
-    const isEditing = d === state.editingDate;
-    return `<details class="hist" ${(isToday || isEditing) ? "open" : ""}>
-      <summary>
-        <span>${fmtDate(d)} ${isToday ? '<span class="pill">сегодня</span>' : ''} ${isEditing ? '<span class="pill">редакт.</span>' : ''}</span>
-        <span class="meta">${sets.length} зап.<br>${Object.keys(byEx).length} упр.</span>
-      </summary>
-      <div class="hist-body">
-        ${exList}
-        <div class="hist-actions">
-          <button class="chip" data-edit="${d}">✎ Изменить</button>
-          <button class="chip" data-repeat="${d}">↻ Повторить</button>
-          <button class="chip" data-copy="${d}">⧉ Копировать</button>
-        </div>
-      </div>
-    </details>`;
-  }).join("");
-
-  area.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editSession(b.dataset.edit));
-  area.querySelectorAll("[data-repeat]").forEach(b => b.onclick = () => repeatSessionIntoDraft(b.dataset.repeat));
-  area.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => copySession(b.dataset.copy));
-}
-
-/* ---------- заголовок-подзаголовок ---------- */
-function updateHeaderSub() {
-  const dates = Object.keys(state.sessions).filter(d => state.sessions[d] && state.sessions[d].length).sort();
-  const el = document.getElementById("headerSub");
-  if (!dates.length) { el.textContent = "Первая запись — начало журнала."; return; }
-  const total = dates.reduce((a, d) => a + state.sessions[d].length, 0);
-  el.textContent = `Записей: ${total} · тренировок: ${dates.length} · последняя ${fmtDate(dates[dates.length - 1])}`;
-}
-
-/* ---------- выбор повтора ---------- */
-function refreshRepeatSelect() {
-  const sel = document.getElementById("repeatSelect");
-  const card = document.getElementById("repeatCard");
-  const dates = Object.keys(state.sessions)
-    .filter(d => state.sessions[d] && state.sessions[d].length && d !== state.editingDate).sort().reverse();
-  if (!dates.length) { card.style.display = "none"; sel.innerHTML = ""; return; }
-  card.style.display = "block";
-  sel.innerHTML = dates.map(d => `<option value="${d}">${fmtDate(d)} — ${state.sessions[d].length} зап.</option>`).join("");
-}
-
-/* ---------- добавление ---------- */
-function addSet(opts = {}) {
-  const exEl = document.getElementById("exerciseInput");
-  const wEl = document.getElementById("weightInput");
-  const rEl = document.getElementById("repsInput");
-  const sEl = document.getElementById("setsInput");
-  const ex = exEl.value.trim();
-  const weight = toNum(wEl.value);
-  const reps = parseInt(rEl.value, 10);
-  const sets = parseInt(sEl.value, 10);
-
-  if (!ex) { toast("Введите упражнение"); exEl.focus(); return false; }
-  if (isNaN(weight) || weight < 0) { toast("Введите вес"); wEl.focus(); return false; }
-  if (isNaN(reps) || reps < 0) { toast("Введите повторы"); rEl.focus(); return false; }
-  if (isNaN(sets) || sets < 1) { toast("Подходов ≥ 1"); sEl.focus(); return false; }
-
-  state.draft.push({ exercise: ex, weight, reps, sets });
-  registerExercise(ex);
-
-  if (opts.keepExercise) {
-    // «другой вес»: оставляем упражнение, чистим вес/повторы
-    wEl.value = ""; rEl.value = ""; sEl.value = "";
-    wEl.focus();
-  } else {
-    exEl.value = ""; wEl.value = ""; rEl.value = ""; sEl.value = "";
-    document.getElementById("suggestHint").textContent = "";
-    exEl.focus();
-  }
-  renderDraft();
-  saveDraftAutosave();
-  return true;
-}
-
-/* ---------- сохранение ---------- */
-function saveSession() {
-  if (!state.currentDate) { toast("Выберите дату"); return; }
-  if (!state.draft.length) { toast("Нечего сохранять"); return; }
-  if (state.editingDate) {
-    state.sessions[state.editingDate] = state.draft.map(s => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, sets: s.sets }));
-    toast(`Тренировка за ${fmtDate(state.editingDate)} обновлена`);
-    state.editingDate = null;
-  } else {
-    state.sessions[state.currentDate] = (state.sessions[state.currentDate] || []).concat(state.draft);
-    toast("Тренировка сохранена");
-  }
-  state.draft = [];
-  saveStore();
-  clearDraftAutosave();
-  renderDraft(); renderHistory(); refreshRepeatSelect();
-  refreshChartExerciseOptions(); drawChart(); renderCalendar(); renderRecords(); updateHeaderSub();
-}
-
-/* ---------- редактирование сохранённой ---------- */
-function editSession(date) {
-  const sets = state.sessions[date];
-  if (!sets || !sets.length) return;
-  state.editingDate = date;
-  state.draft = sets.map(s => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, sets: s.sets }));
-  document.getElementById("dateInput").value = date;
-  state.currentDate = date;
-  renderDraft(); renderHistory(); refreshRepeatSelect();
-  saveDraftAutosave();
-  document.getElementById("draftArea").scrollIntoView({ behavior: "smooth", block: "start" });
-}
-function cancelEdit() {
-  state.editingDate = null; state.draft = [];
-  clearDraftAutosave();
-  renderDraft(); renderHistory(); refreshRepeatSelect();
-}
-function deleteSession() {
-  if (!state.editingDate) return;
-  const date = state.editingDate;
-  showConfirm(`Удалить тренировку за ${fmtDate(date)}?`, () => {
-    delete state.sessions[date];
-    state.editingDate = null; state.draft = [];
-    saveStore();
-    clearDraftAutosave();
-    renderDraft(); renderHistory(); refreshRepeatSelect();
-    refreshChartExerciseOptions(); drawChart(); renderCalendar(); renderRecords(); updateHeaderSub();
-    toast("Тренировка удалена");
-  }, "Удалить");
-}
-function repeatSessionIntoDraft(date) {
-  const sets = state.sessions[date] || [];
-  if (!sets.length) return;
-  state.editingDate = null;
-  state.draft = sets.map(s => ({ exercise: s.exercise, weight: s.weight, reps: s.reps, sets: s.sets }));
-  renderDraft(); renderHistory();
-  saveDraftAutosave();
-  toast(`Загружено ${sets.length} зап. из ${fmtDate(date)}`);
-}
-
-/* ---------- копирование в текст ---------- */
-function buildSessionText(sets, date) {
-  const isToday = date === todayISO();
-  const label = isToday ? "Сегодня" : "Тренировка";
-  const lines = ["Журнал тренировок", "", `${label} (${date})`];
-  const order = [];
-  const groups = {};
-  sets.forEach(s => {
-    if (!groups[s.exercise]) { groups[s.exercise] = []; order.push(s.exercise); }
-    groups[s.exercise].push(s);
-  });
-  order.forEach(ex => {
-    const parts = groups[ex].map(s => `${formatNum(s.weight)} кг · ${s.sets}×${s.reps}`).join(", ");
-    lines.push(`- ${ex}: ${parts}`);
-  });
-  return lines.join("\n");
-}
-async function copyText(text) {
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch (e) {}
-  // запасной вариант для старых/iOS Safari
-  try {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.top = "-1000px";
-    ta.setAttribute("readonly", "");
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand("copy");
-    ta.remove();
-    return ok;
-  } catch (e) { return false; }
-}
-function copyDraft() {
-  if (!state.draft.length) { toast("Нечего копировать — добавьте упражнения"); return; }
-  const date = state.editingDate || state.currentDate;
-  const text = buildSessionText(state.draft, date);
-  copyText(text).then(ok => toast(ok ? "Тренировка скопирована" : "Не удалось скопировать"));
-}
-function copySession(date) {
-  const sets = state.sessions[date];
-  if (!sets || !sets.length) return;
-  const text = buildSessionText(sets, date);
-  copyText(text).then(ok => toast(ok ? "Тренировка скопирована" : "Не удалось скопировать"));
-}
-
-/* ---------- импорт / экспорт ---------- */
-function exportJSON() {
-  const data = { version: 1, exportedAt: new Date().toISOString(), exercises: state.exercises, sessions: state.sessions };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = `workout-log-${todayISO()}.json`;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-  toast("Экспортировано в JSON");
-}
-function importJSON(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (!data || typeof data !== "object") throw 0;
-      const incS = data.sessions || {};
-      const incE = data.exercises || [];
-      state.exercises = uniq(state.exercises.concat(incE)).sort((a, b) => a.localeCompare(b, "ru"));
-      Object.keys(incS).forEach(date => {
-        const existing = state.sessions[date] || [];
-        const merged = existing.slice();
-        incS[date].forEach(s => {
-          const dup = existing.some(x => x.exercise === s.exercise && x.weight === s.weight && x.reps === s.reps && x.sets === s.sets);
-          if (!dup) merged.push({ exercise: s.exercise, weight: s.weight, reps: s.reps, sets: s.sets || 1 });
-        });
-        state.sessions[date] = merged;
-      });
-      saveStore(); rebuildDatalist(); renderExercisesList(); renderHistory(); refreshRepeatSelect();
-      refreshChartExerciseOptions(); drawChart(); renderCalendar(); renderRecords(); updateHeaderSub();
-      toast(`Импортировано сессий: ${Object.keys(incS).length}`);
-    } catch (err) { toast("Ошибка импорта: некорректный JSON"); }
-  };
-  reader.readAsText(file);
-}
-function clearAll() {
-  showConfirm("Удалить ВСЕ данные из этого браузера? Это необратимо.", () => {
-    localStorage.removeItem(STORAGE_KEY);
-    clearDraftAutosave();
-    Object.assign(state, { exercises: [], sessions: {}, draft: [], editingDate: null });
-    rebuildDatalist(); renderExercisesList(); renderDraft(); renderHistory(); refreshRepeatSelect();
-    refreshChartExerciseOptions(); drawChart(); renderCalendar(); renderRecords(); updateHeaderSub();
-    toast("Все данные очищены");
-  }, "Очистить всё");
-}
-
-/* ---------- календарь ---------- */
-let calendarMonth = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })();
-
-function renderCalendar() {
-  const grid = document.getElementById("calGrid");
-  const title = document.getElementById("calTitle");
-  if (!grid || !title) return;
-  const year = calendarMonth.getFullYear(), month = calendarMonth.getMonth();
-  title.textContent = calendarMonth.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
-
-  const dowNames = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-  let html = dowNames.map(d => `<div class="cal-dow">${d}</div>`).join("");
-
-  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // 0 = понедельник
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const daysInPrevMonth = new Date(year, month, 0).getDate();
-  const todayStr = todayISO();
-
-  for (let i = firstDow - 1; i >= 0; i--) {
-    html += `<div class="cal-day other">${daysInPrevMonth - i}</div>`;
-  }
-  for (let d = 1; d <= daysInMonth; d++) {
-    const iso = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    const has = !!(state.sessions[iso] && state.sessions[iso].length);
-    const isToday = iso === todayStr;
-    html += `<div class="cal-day${has ? " has" : ""}${isToday ? " today" : ""}"${has ? ` data-date="${iso}"` : ""}>${d}${has ? '<span class="dot"></span>' : ""}</div>`;
-  }
-  const totalCells = firstDow + daysInMonth;
-  const trailing = (7 - (totalCells % 7)) % 7;
-  for (let d = 1; d <= trailing; d++) html += `<div class="cal-day other">${d}</div>`;
-
-  grid.innerHTML = html;
-  grid.querySelectorAll("[data-date]").forEach(el => {
-    el.onclick = () => {
-      const iso = el.dataset.date;
-      const sets = state.sessions[iso] || [];
-      const names = Array.from(new Set(sets.map(s => s.exercise)));
-      toast(`${fmtDate(iso)}: ${names.slice(0, 3).join(", ")}${names.length > 3 ? "…" : ""}`);
-    };
-  });
-}
-
-/* ---------- личные рекорды ---------- */
-function computeRecords() {
-  // exercise (нижний регистр) -> { exercise, weight, date }
-  const rec = {};
-  Object.keys(state.sessions).sort().forEach(date => {
-    state.sessions[date].forEach(s => {
-      if (s.weight == null || isNaN(s.weight)) return;
-      const key = s.exercise.toLowerCase();
-      if (!rec[key] || s.weight > rec[key].weight) rec[key] = { exercise: s.exercise, weight: s.weight, date };
-    });
-  });
-  return rec;
-}
-function renderRecords() {
-  const area = document.getElementById("recordsArea");
-  if (!area) return;
-  const rec = computeRecords();
-  const list = Object.values(rec).sort((a, b) => b.weight - a.weight);
-  if (!list.length) {
-    area.innerHTML = '<div class="empty"><div class="big">Пока нет рекордов</div><div class="small">Появятся, как только укажете вес хотя бы для одного упражнения</div></div>';
-    return;
-  }
-  area.innerHTML = list.map(r => `
-    <div class="record-row">
-      <span class="record-name">${escapeHtml(r.exercise)}</span>
-      <span>
-        <span class="record-val">${formatNum(r.weight)} кг</span>
-        <span class="record-date"> · ${shortDate(r.date)}</span>
-      </span>
-    </div>`).join("");
-}
-
-/* ---------- график ---------- */
-function metricValue(set, m) {
-  if (m === "weight") return set.weight;
-  if (m === "reps") return set.reps;
-  if (m === "sets") return set.sets;
-  if (m === "volume") return (set.weight || 0) * (set.reps || 0) * (set.sets || 0);
-  return 0;
-}
-function metricLabel(m) { return ({ weight: "Вес, кг", reps: "Повторы", sets: "Подходы", volume: "Объём, кг" })[m] || ""; }
-function refreshChartExerciseOptions() {
-  const sel = document.getElementById("chartExercise");
-  const cur = sel.value;
-  const used = new Set();
-  Object.values(state.sessions).forEach(arr => arr.forEach(s => used.add(s.exercise)));
-  const list = Array.from(used).sort((a, b) => a.localeCompare(b, "ru"));
-  sel.innerHTML = '<option value="">— выберите —</option>' +
-    list.map(e => `<option value="${escapeHtml(e)}"${e === cur ? " selected" : ""}>${escapeHtml(e)}</option>`).join("");
-}
-function drawChart() {
-  const area = document.getElementById("chartArea");
-  const exercise = document.getElementById("chartExercise").value;
-  const metric = document.getElementById("chartMetric").value;
-  if (!exercise) { area.innerHTML = '<div class="chart-empty">Выберите упражнение, чтобы увидеть прогресс.</div>'; return; }
-  const points = [];
-  Object.keys(state.sessions).sort().forEach(date => {
-    const sets = state.sessions[date].filter(s => s.exercise.toLowerCase() === exercise.toLowerCase());
-    if (!sets.length) return;
-    points.push({ date, value: Math.max.apply(null, sets.map(s => metricValue(s, metric))) });
-  });
-  if (!points.length) { area.innerHTML = '<div class="chart-empty">Нет данных для этого упражнения.</div>'; return; }
-
-  const W = 680, H = 260, padL = 44, padR = 14, padT = 18, padB = 38;
-  const innerW = W - padL - padR, innerH = H - padT - padB;
-  const maxY = Math.max.apply(null, points.map(p => p.value));
-  const minY = 0;
-  const spanY = (maxY - minY) || 1;
-  const xStep = points.length > 1 ? innerW / (points.length - 1) : 0;
-  const xOf = i => padL + (points.length > 1 ? i * xStep : innerW / 2);
-  const yOf = v => padT + innerH - ((v - minY) / spanY) * innerH;
-
-  let grid = "";
-  const ticks = 4;
-  for (let t = 0; t <= ticks; t++) {
-    const v = minY + (spanY * t / ticks);
-    const y = yOf(v);
-    grid += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#2e2e34" stroke-width="1"/>`;
-    grid += `<text x="${padL - 8}" y="${y + 4}" text-anchor="end" fill="#7c7c84" font-size="11">${formatNum(v)}</text>`;
-  }
-  let pathD = "", dots = "", xLabels = "";
-  let runningMax = -Infinity;
-  points.forEach((p, i) => {
-    const x = xOf(i), y = yOf(p.value);
-    pathD += (i === 0 ? "M" : "L") + x + "," + y + " ";
-    const isPR = p.value > runningMax;
-    if (p.value > runningMax) runningMax = p.value;
-    dots += isPR
-      ? `<circle cx="${x}" cy="${y}" r="6.5" fill="#f2b544" stroke="#c75b22" stroke-width="1.5"><title>${fmtDate(p.date)}: ${formatNum(p.value)} — рекорд</title></circle>`
-      : `<circle cx="${x}" cy="${y}" r="4.5" fill="#c75b22"><title>${fmtDate(p.date)}: ${formatNum(p.value)}</title></circle>`;
-    if (points.length <= 8 || i === 0 || i === points.length - 1 || i % Math.ceil(points.length / 6) === 0) {
-      const lx = Math.min(Math.max(x, padL + 12), W - padR - 12);
-      xLabels += `<text x="${lx}" y="${H - padB + 16}" text-anchor="middle" fill="#7c7c84" font-size="10">${shortDate(p.date)}</text>`;
-    }
-  });
-  const axes = `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H - padB}" stroke="#33333a"/>` +
-               `<line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="#33333a"/>`;
-  const first = points[0].value, last = points[points.length - 1].value;
-  const delta = last - first;
-  const trend = delta > 0 ? `▲ +${formatNum(delta)}` : (delta < 0 ? `▼ ${formatNum(delta)}` : "— 0");
-  const trendColor = delta > 0 ? "#3ecf6f" : (delta < 0 ? "#e0584f" : "#7c7c84");
-
-  area.innerHTML = `<div class="chart-wrap">
-    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Прогресс: ${escapeHtml(exercise)}">
-      ${grid}${axes}
-      <path d="${pathD}" fill="none" stroke="#c75b22" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
-      ${dots}${xLabels}
-      <text x="${padL}" y="${padT - 5}" fill="#7c7c84" font-size="11">${escapeHtml(metricLabel(metric))}</text>
-    </svg>
-    <div class="hint">Точек: ${points.length}. Динамика: <span style="color:${trendColor};font-weight:700">${trend}</span> (${formatNum(first)} → ${formatNum(last)}). <span style="color:#f2b544">●</span> — рекорд на тот момент.</div>
-  </div>`;
-}
-
-/* ---------- инициализация ---------- */
-function init() {
-  const store = loadStore();
-  state.exercises = store.exercises;
-  state.sessions = normalizeSessions(store.sessions);
-  state.currentDate = todayISO();
-
-  const autosaved = loadDraftAutosave();
-  if (autosaved && Array.isArray(autosaved.draft) && autosaved.draft.length) {
-    state.draft = autosaved.draft;
-    state.currentDate = autosaved.currentDate || state.currentDate;
-    state.editingDate = autosaved.editingDate || null;
-  }
-
-  const dateInput = document.getElementById("dateInput");
-  dateInput.value = state.currentDate;
-  dateInput.onchange = () => {
-    state.currentDate = dateInput.value || todayISO();
-    renderHistory(); refreshRepeatSelect(); updateSuggestion();
-    saveDraftAutosave();
-  };
-  document.getElementById("todayBtn").onclick = () => {
-    state.currentDate = todayISO(); dateInput.value = state.currentDate;
-    renderHistory(); refreshRepeatSelect(); updateSuggestion();
-    saveDraftAutosave();
-  };
-
-  document.getElementById("addSetBtn").onclick = () => addSet();
-  document.getElementById("anotherWeightBtn").onclick = () => addSet({ keepExercise: true });
-
-  document.querySelectorAll(".qw[data-bump]").forEach(btn => {
-    btn.onclick = () => {
-      const wEl = document.getElementById("weightInput");
-      const current = toNum(wEl.value) || 0;
-      const next = Math.max(0, current + parseFloat(btn.dataset.bump));
-      wEl.value = String(next).replace(".", ",");
-      wEl.focus();
-    };
-  });
-
-  const exInput = document.getElementById("exerciseInput");
-  exInput.addEventListener("input", updateSuggestion);
-  exInput.addEventListener("change", updateSuggestion);
-  ["exerciseInput", "weightInput", "repsInput", "setsInput"].forEach(id => {
-    document.getElementById(id).addEventListener("keydown", e => {
-      if (e.key === "Enter") { e.preventDefault();
-        if (id === "exerciseInput" && document.getElementById("weightInput").value === "") document.getElementById("weightInput").focus();
-        else addSet();
-      }
-    });
-  });
-
-  document.getElementById("saveSessionBtn").onclick = saveSession;
-  document.getElementById("copyDraftBtn").onclick = copyDraft;
-  document.getElementById("cancelEditBtn").onclick = cancelEdit;
-  document.getElementById("deleteSessionBtn").onclick = deleteSession;
-  document.getElementById("clearDraftBtn").onclick = clearDraft;
-  document.getElementById("repeatBtn").onclick = () => {
-    refreshRepeatSelect();
-    const card = document.getElementById("repeatCard");
-    if (card.style.display !== "none") {
-      card.open = true;
-      document.getElementById("repeatSelect").focus();
-      card.scrollIntoView({ behavior: "smooth", block: "center" });
-    } else toast("Прошлых тренировок пока нет");
-  };
-  document.getElementById("repeatLoadBtn").onclick = () => {
-    const date = document.getElementById("repeatSelect").value;
-    if (date) repeatSessionIntoDraft(date);
-  };
-  document.getElementById("exportBtn").onclick = exportJSON;
-  document.getElementById("importBtn").onclick = () => document.getElementById("importFile").click();
-  document.getElementById("importFile").onchange = (e) => { if (e.target.files[0]) importJSON(e.target.files[0]); e.target.value = ""; };
-  document.getElementById("clearBtn").onclick = clearAll;
-
-  document.getElementById("chartScrollBtn").onclick = () => {
-    const card = document.getElementById("chartCard");
-    const btn = document.getElementById("chartScrollBtn");
-    const willShow = !card.classList.contains("visible");
-    card.classList.toggle("visible", willShow);
-    btn.classList.toggle("active", willShow);
-    if (willShow) {
-      drawChart(); renderCalendar(); renderRecords();
-      card.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-  document.getElementById("calPrevBtn").onclick = () => {
-    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
-    renderCalendar();
-  };
-  document.getElementById("calNextBtn").onclick = () => {
-    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
-    renderCalendar();
-  };
-
-  document.getElementById("chartExercise").onchange = drawChart;
-  document.getElementById("chartMetric").onchange = drawChart;
-
-  rebuildDatalist(); renderExercisesList(); renderDraft(); renderHistory(); refreshRepeatSelect();
-  refreshChartExerciseOptions(); drawChart(); renderCalendar(); renderRecords(); updateHeaderSub();
-  if (autosaved && autosaved.draft && autosaved.draft.length) {
-    toast("Восстановлен несохранённый черновик тренировки");
-  }
-}
-init();
-</script>
+<script src="js/utils.js"></script>
+<script src="js/storage-manager.js"></script>
+<script src="js/exercise-manager.js"></script>
+<script src="js/workout-manager.js"></script>
+<script src="js/cardio-manager.js"></script>
+<script src="js/records-manager.js"></script>
+<script src="js/statistics-manager.js"></script>
+<script src="js/chart-manager.js"></script>
+<script src="js/data-manager.js"></script>
+<script src="js/ui-common.js"></script>
+<script src="js/ui-input.js"></script>
+<script src="js/ui-draft.js"></script>
+<script src="js/ui-history.js"></script>
+<script src="js/ui-records.js"></script>
+<script src="js/ui-chart.js"></script>
+<script src="js/ui-exercises.js"></script>
+<script src="js/ui-other.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
