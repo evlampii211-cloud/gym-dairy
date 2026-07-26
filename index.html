@@ -296,6 +296,38 @@
   .record-name { font-weight: 600; }
   .record-val { color: var(--accent-hi); font-weight: 700; }
   .record-date { color: var(--muted); font-size: 12px; }
+  .record-row.record-highlight { background: var(--accent-soft); border-color: rgba(199,91,34,0.4); }
+  .records-subhead { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin: 0 0 8px; }
+  .records-subhead.second { margin-top: 16px; }
+
+  /* вложенные разделы внутри «Другое» — те же карточки, но компактнее и без верхнего регистра */
+  details.sub { border: 1px solid var(--glass-border-soft); border-radius: var(--radius-sm); margin-bottom: 10px; overflow: hidden; background: var(--glass-3); }
+  details.sub > summary {
+    cursor: pointer; padding: 13px 14px; font-weight: 600; font-size: 14px; list-style: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  details.sub > summary::-webkit-details-marker { display: none; }
+  details.sub > summary .chev { margin-left: auto; color: var(--muted); font-size: 14px; transition: transform .15s; }
+  details.sub[open] > summary { border-bottom: 1px solid var(--glass-border-soft); }
+  details.sub[open] > summary .chev { transform: rotate(90deg); }
+  details.sub > .sub-body { padding: 13px 14px 14px; }
+
+  /* карточка объединённого упражнения (несколько подходов с разным весом) */
+  .ex-card { background: var(--glass-3); border: 1px solid var(--glass-border-soft); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 12px; }
+  .ex-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .ex-card-head input.ex-name { flex: 1 1 auto; font-weight: 700; font-size: 15px; padding: 9px 10px; }
+  .set-row-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .set-label { font-size: 12px; font-weight: 700; color: var(--accent-hi); text-transform: uppercase; letter-spacing: 0.5px; }
+  .set-del { padding: 2px 8px; font-size: 18px; line-height: 1; }
+  .set-divider { border-top: 1px dashed var(--glass-border-soft); margin: 14px 0; }
+  .ex-card .row3 { margin-bottom: 0; }
+  .add-weight-btn { margin-top: 12px; }
+
+  /* история — подходы построчно внутри упражнения */
+  .hist-ex { margin: 5px 0 10px; }
+  .hist-ex:last-child { margin-bottom: 0; }
+  .hist-ex-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .hist-set { font-size: 13px; color: var(--muted); padding-left: 2px; }
 
   /* опасная зона — визуально отделена от обычных действий */
   .danger-zone { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--glass-border); }
@@ -342,9 +374,6 @@
     <div class="header-actions">
       <button class="icon-btn" id="chartScrollBtn" title="График" aria-label="График">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
-      </button>
-      <button class="icon-btn" id="repeatBtn" title="Повторить прошлую" aria-label="Повторить прошлую">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
       </button>
       <button class="icon-btn" id="exportBtn" title="Экспорт JSON" aria-label="Экспорт JSON">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
@@ -415,18 +444,6 @@
     </div>
   </details>
 
-  <!-- Повтор -->
-  <details class="card" id="repeatCard" style="display:none">
-    <summary>Повторить прошлую тренировку <span class="chev">›</span></summary>
-    <div class="card-body">
-      <div class="field">
-        <label for="repeatSelect">Выберите дату</label>
-        <select id="repeatSelect"></select>
-      </div>
-      <button class="btn btn-primary" id="repeatLoadBtn">Загрузить в черновик</button>
-    </div>
-  </details>
-
   <!-- График (скрыт, показывается только кнопкой «График» сверху) -->
   <div class="card" id="chartCard">
     <h2>График прогресса</h2>
@@ -457,14 +474,6 @@
     <div id="chartArea" style="margin-top:12px"></div>
   </div>
 
-  <!-- Список упражнений -->
-  <details class="card" id="exercisesCard">
-    <summary>Список упражнений <span id="exercisesCount" class="pill"></span> <span class="chev">›</span></summary>
-    <div class="card-body">
-      <div id="exercisesArea"></div>
-    </div>
-  </details>
-
   <!-- Личные рекорды -->
   <details class="card" id="recordsCard">
     <summary>Личные рекорды <span class="chev">›</span></summary>
@@ -485,6 +494,30 @@
   <details class="card" id="otherCard">
     <summary>Другое <span class="chev">›</span></summary>
     <div class="card-body">
+
+      <!-- Повторить прошлую тренировку -->
+      <details class="sub" id="repeatCard">
+        <summary>Повторить прошлую тренировку <span class="chev">›</span></summary>
+        <div class="sub-body">
+          <div id="repeatEmpty" class="hint" style="display:none">Прошлых тренировок пока нет.</div>
+          <div id="repeatFormWrap">
+            <div class="field">
+              <label for="repeatSelect">Выберите дату</label>
+              <select id="repeatSelect"></select>
+            </div>
+            <button class="btn btn-primary" id="repeatLoadBtn">Загрузить в черновик</button>
+          </div>
+        </div>
+      </details>
+
+      <!-- Список упражнений -->
+      <details class="sub" id="exercisesCard">
+        <summary>Список упражнений <span id="exercisesCount" class="pill"></span> <span class="chev">›</span></summary>
+        <div class="sub-body">
+          <div id="exercisesArea"></div>
+        </div>
+      </details>
+
       <div class="btn-row" style="gap:8px">
         <button class="chip" id="copyDraftBtn">⧉ Копировать</button>
         <button class="chip" id="importBtn">⤒ Импорт JSON</button>
@@ -767,6 +800,18 @@ function updateSuggestion() {
   }
 }
 
+/* ---------- черновик: группировка по упражнению (один блок — все подходы внутри) ---------- */
+function groupByExercise(list) {
+  const order = [];
+  const groups = {};
+  list.forEach((s, i) => {
+    const key = s.exercise.toLowerCase();
+    if (!groups[key]) { groups[key] = { exercise: s.exercise, items: [] }; order.push(key); }
+    groups[key].items.push({ ...s, _i: i });
+  });
+  return order.map(k => groups[k]);
+}
+
 /* ---------- черновик: редактируемые записи ---------- */
 function renderDraft() {
   const area = document.getElementById("draftArea");
@@ -786,49 +831,100 @@ function renderDraft() {
     return;
   }
 
-  area.innerHTML = state.draft.map((s, i) => `
-    <div class="entry" data-i="${i}">
-      <div class="entry-head">
-        <span class="entry-idx">${i + 1}</span>
-        <input class="ex" type="text" list="exerciseList" value="${escapeHtml(s.exercise)}" data-field="exercise" placeholder="Упражнение">
-        <button class="entry-x" data-del="${i}" title="Убрать">×</button>
+  const groups = groupByExercise(state.draft);
+
+  area.innerHTML = groups.map(g => `
+    <div class="ex-card" data-group="${escapeHtml(g.exercise)}">
+      <div class="ex-card-head">
+        <input class="ex-name" type="text" list="exerciseList" value="${escapeHtml(g.exercise)}" data-group-old="${escapeHtml(g.exercise)}">
+        <button class="entry-x" data-del-group="${escapeHtml(g.exercise)}" title="Убрать упражнение целиком">×</button>
       </div>
-      <div class="row3">
-        <div><label>Вес, кг</label><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" value="${s.weight}" data-field="weight"></div>
-        <div><label>Повторы</label><input type="number" inputmode="numeric" min="0" value="${s.reps}" data-field="reps"></div>
-        <div><label>Подходы</label><input type="number" inputmode="numeric" min="1" value="${s.sets}" data-field="sets"></div>
-      </div>
+      ${g.items.map((it, idx) => `
+        ${idx > 0 ? '<div class="set-divider"></div>' : ''}
+        <div class="set-row" data-i="${it._i}">
+          <div class="set-row-head">
+            <span class="set-label">Подход ${idx + 1}</span>
+            <button class="entry-x set-del" data-del="${it._i}" title="Убрать подход">×</button>
+          </div>
+          <div class="row3">
+            <div><label>Вес, кг</label><input type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" value="${it.weight}" data-field="weight" data-i="${it._i}"></div>
+            <div><label>Повторы</label><input type="number" inputmode="numeric" min="0" value="${it.reps}" data-field="reps" data-i="${it._i}"></div>
+            <div><label>Подходы</label><input type="number" inputmode="numeric" min="1" value="${it.sets}" data-field="sets" data-i="${it._i}"></div>
+          </div>
+        </div>`).join("")}
+      <button type="button" class="btn-dashed add-weight-btn" data-add-weight="${escapeHtml(g.exercise)}">+ Добавить другой вес</button>
     </div>`).join("");
 
-  // привязка инлайн-редактирования
-  area.querySelectorAll(".entry").forEach(entry => {
-    const i = parseInt(entry.dataset.i, 10);
-    entry.querySelectorAll("[data-field]").forEach(inp => {
-      const field = inp.dataset.field;
-      const apply = () => {
-        let v = inp.value;
-        if (field === "weight") {
-          v = toNum(v); if (isNaN(v) || v < 0) v = 0;
-        } else if (field === "reps" || field === "sets") {
-          v = parseInt(v, 10); if (isNaN(v)) v = (field === "sets" ? 1 : 0);
-          if (field === "sets" && v < 1) v = 1;
-        } else {
-          v = String(v).trim();
-          if (field === "exercise") registerExercise(v);
-        }
-        state.draft[i][field] = v;
-        if (field !== "exercise") inp.value = v;
-        saveDraftAutosave();
-      };
-      inp.addEventListener("change", apply);
-      inp.addEventListener("blur", apply);
-    });
+  // привязка инлайн-редактирования полей подхода
+  area.querySelectorAll("[data-field]").forEach(inp => {
+    const i = parseInt(inp.dataset.i, 10);
+    const field = inp.dataset.field;
+    const apply = () => {
+      let v = inp.value;
+      if (field === "weight") {
+        v = toNum(v); if (isNaN(v) || v < 0) v = 0;
+      } else {
+        v = parseInt(v, 10); if (isNaN(v)) v = (field === "sets" ? 1 : 0);
+        if (field === "sets" && v < 1) v = 1;
+      }
+      state.draft[i][field] = v;
+      inp.value = v;
+      saveDraftAutosave();
+    };
+    inp.addEventListener("change", apply);
+    inp.addEventListener("blur", apply);
   });
+
+  // удаление одного подхода
   area.querySelectorAll("[data-del]").forEach(b => {
     b.onclick = () => {
       state.draft.splice(parseInt(b.dataset.del, 10), 1);
       renderDraft();
       saveDraftAutosave();
+    };
+  });
+
+  // удаление всего упражнения (всех его подходов)
+  area.querySelectorAll("[data-del-group]").forEach(b => {
+    b.onclick = () => {
+      const key = b.dataset.delGroup.toLowerCase();
+      state.draft = state.draft.filter(s => s.exercise.toLowerCase() !== key);
+      renderDraft();
+      saveDraftAutosave();
+    };
+  });
+
+  // переименование упражнения — применяется ко всем подходам этой группы в черновике
+  area.querySelectorAll("input.ex-name").forEach(inp => {
+    const apply = () => {
+      const oldName = inp.dataset.groupOld;
+      const newName = inp.value.trim();
+      if (!newName) { inp.value = oldName; return; }
+      if (newName === oldName) return;
+      state.draft.forEach(s => { if (s.exercise.toLowerCase() === oldName.toLowerCase()) s.exercise = newName; });
+      registerExercise(newName);
+      renderDraft();
+      saveDraftAutosave();
+    };
+    inp.addEventListener("change", apply);
+    inp.addEventListener("blur", apply);
+  });
+
+  // «+ Добавить другой вес» — новый подход внутри той же карточки, без возврата к форме сверху
+  area.querySelectorAll("[data-add-weight]").forEach(b => {
+    b.onclick = () => {
+      const key = b.dataset.addWeight.toLowerCase();
+      const groupItems = state.draft.filter(s => s.exercise.toLowerCase() === key);
+      const last = groupItems[groupItems.length - 1];
+      state.draft.push({ exercise: last.exercise, weight: last.weight, reps: last.reps, sets: last.sets });
+      renderDraft();
+      saveDraftAutosave();
+      const newRows = area.querySelectorAll(`[data-group="${CSS.escape(b.dataset.addWeight)}"] .set-row`);
+      const lastRow = newRows[newRows.length - 1];
+      if (lastRow) {
+        const wInput = lastRow.querySelector('[data-field="weight"]');
+        if (wInput) { wInput.focus(); wInput.select(); }
+      }
     };
   });
 }
@@ -845,17 +941,19 @@ function renderHistory() {
   }
   area.innerHTML = dates.map(d => {
     const sets = state.sessions[d];
-    const byEx = {};
-    sets.forEach(s => { (byEx[s.exercise] = byEx[s.exercise] || []).push(s); });
-    const exList = Object.keys(byEx).map(ex =>
-      `<div class="hist-line"><strong>${escapeHtml(ex)}</strong> <span class="tag">—</span> ${byEx[ex].map(s => `${formatNum(s.weight)}кг×${s.reps}×${s.sets}под`).join(", ")}</div>`
+    const groups = groupByExercise(sets);
+    const exList = groups.map(g =>
+      `<div class="hist-ex">
+        <div class="hist-ex-name">${escapeHtml(g.exercise)}</div>
+        ${g.items.map((s, idx) => `<div class="hist-set">Подход ${idx + 1}: ${formatNum(s.weight)} кг × ${s.reps} повт × ${s.sets} под</div>`).join("")}
+      </div>`
     ).join("");
     const isToday = d === state.currentDate;
     const isEditing = d === state.editingDate;
     return `<details class="hist" ${(isToday || isEditing) ? "open" : ""}>
       <summary>
         <span>${fmtDate(d)} ${isToday ? '<span class="pill">сегодня</span>' : ''} ${isEditing ? '<span class="pill">редакт.</span>' : ''}</span>
-        <span class="meta">${sets.length} зап.<br>${Object.keys(byEx).length} упр.</span>
+        <span class="meta">${sets.length} зап.<br>${groups.length} упр.</span>
       </summary>
       <div class="hist-body">
         ${exList}
@@ -885,11 +983,18 @@ function updateHeaderSub() {
 /* ---------- выбор повтора ---------- */
 function refreshRepeatSelect() {
   const sel = document.getElementById("repeatSelect");
-  const card = document.getElementById("repeatCard");
+  const emptyMsg = document.getElementById("repeatEmpty");
+  const formWrap = document.getElementById("repeatFormWrap");
   const dates = Object.keys(state.sessions)
     .filter(d => state.sessions[d] && state.sessions[d].length && d !== state.editingDate).sort().reverse();
-  if (!dates.length) { card.style.display = "none"; sel.innerHTML = ""; return; }
-  card.style.display = "block";
+  if (!dates.length) {
+    emptyMsg.style.display = "block";
+    formWrap.style.display = "none";
+    sel.innerHTML = "";
+    return;
+  }
+  emptyMsg.style.display = "none";
+  formWrap.style.display = "block";
   sel.innerHTML = dates.map(d => `<option value="${d}">${fmtDate(d)} — ${state.sessions[d].length} зап.</option>`).join("");
 }
 
@@ -1138,23 +1243,47 @@ function computeRecords() {
   });
   return rec;
 }
+function computeWorkoutTonnageRecord() {
+  let best = null;
+  Object.keys(state.sessions).forEach(date => {
+    const sets = state.sessions[date] || [];
+    if (!sets.length) return;
+    const total = sets.reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0) * (s.sets || 0), 0);
+    if (!best || total > best.total) best = { date, total };
+  });
+  return best;
+}
 function renderRecords() {
   const area = document.getElementById("recordsArea");
   if (!area) return;
   const rec = computeRecords();
   const list = Object.values(rec).sort((a, b) => b.weight - a.weight);
-  if (!list.length) {
-    area.innerHTML = '<div class="empty"><div class="big">Пока нет рекордов</div><div class="small">Появятся, как только укажете вес хотя бы для одного упражнения</div></div>';
-    return;
+  const tonnage = computeWorkoutTonnageRecord();
+
+  let html = "";
+  if (tonnage) {
+    html += `<div class="records-subhead">Тоннаж тренировки</div>
+      <div class="record-row record-highlight">
+        <span class="record-name">🏋️ Лучший тоннаж за тренировку</span>
+        <span>
+          <span class="record-val">${formatNum(tonnage.total)} кг</span>
+          <span class="record-date"> · ${shortDate(tonnage.date)}</span>
+        </span>
+      </div>`;
   }
-  area.innerHTML = list.map(r => `
-    <div class="record-row">
-      <span class="record-name">${escapeHtml(r.exercise)}</span>
-      <span>
-        <span class="record-val">${formatNum(r.weight)} кг</span>
-        <span class="record-date"> · ${shortDate(r.date)}</span>
-      </span>
-    </div>`).join("");
+  if (!list.length) {
+    html += '<div class="empty"><div class="big">Пока нет рекордов по весу</div><div class="small">Появятся, как только укажете вес хотя бы для одного упражнения</div></div>';
+  } else {
+    html += `<div class="records-subhead second">Рекорды по весу</div>` + list.map(r => `
+      <div class="record-row">
+        <span class="record-name">${escapeHtml(r.exercise)}</span>
+        <span>
+          <span class="record-val">${formatNum(r.weight)} кг</span>
+          <span class="record-date"> · ${shortDate(r.date)}</span>
+        </span>
+      </div>`).join("");
+  }
+  area.innerHTML = html;
 }
 
 /* ---------- график ---------- */
@@ -1295,15 +1424,6 @@ function init() {
   document.getElementById("cancelEditBtn").onclick = cancelEdit;
   document.getElementById("deleteSessionBtn").onclick = deleteSession;
   document.getElementById("clearDraftBtn").onclick = clearDraft;
-  document.getElementById("repeatBtn").onclick = () => {
-    refreshRepeatSelect();
-    const card = document.getElementById("repeatCard");
-    if (card.style.display !== "none") {
-      card.open = true;
-      document.getElementById("repeatSelect").focus();
-      card.scrollIntoView({ behavior: "smooth", block: "center" });
-    } else toast("Прошлых тренировок пока нет");
-  };
   document.getElementById("repeatLoadBtn").onclick = () => {
     const date = document.getElementById("repeatSelect").value;
     if (date) repeatSessionIntoDraft(date);
